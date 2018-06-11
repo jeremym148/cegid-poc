@@ -1,0 +1,22 @@
+{
+  "name": "web-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npm-run-all --parallel server webpack:watch "
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "easysoap": "^2.0.1",
+    "express": "^4.13.2",
+    "fetch": "^1.1.0",
+    "node-fetch": "^2.1.2",
+    "soap": "^0.24.0",
+    "ssl-root-cas": "^1.2.5",
+    "xml-parser": "^1.2.1",
+    "xml2js": "^0.4.19"
+  }
+}
