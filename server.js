@@ -9,22 +9,16 @@ var GetListItemInventoryDetailByStore = require('./Utils').GetListItemInventoryD
 app.use(bodyParser.text());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
-
-// https.globalAgent.options.ca = rootCas;
-
-// var rootCas = require('ssl-root-cas').create();
-// https.globalAgent.options.ca = rootCas;
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
-// var options = {
-//     key: fs.readFileSync( './localhost.key' ),
-//     cert: fs.readFileSync( './localhost.cert' ),
-//     requestCert: false,
-//     rejectUnauthorized: false
-// };
-
 var port = process.env.PORT || 8080;
-// var server = https.createServer( options, app );
+
+class StoreStockwrapper{
+    constructor(storeId, storeName, stock){
+        this.storeId = storeId;
+        this.storeName = storeName;
+        this.stock = stock;
+    }
+}
 
 const callCegid = async (method, body) => {
     var url = 'https://y2-poc.lvmh.com/Y2-POC/ItemInventoryWcfService.svc';
@@ -40,9 +34,20 @@ const callCegid = async (method, body) => {
     try{
         var result = await fetch(`${url}`,POST)
         result = await result.text()
-        return Wsdlrdr.getXmlDataAsJson(result);
+        var stockArray = [];
+        let resultObj = Wsdlrdr.getXmlDataAsJson(result);
+        stockArray = resultObj
+        .GetListItemInventoryDetailByStoreResponse
+        .GetListItemInventoryDetailByStoreResult
+        .InventoryDetailsByStore.AvailableQtyByItemByStore[1]
+        .StoresAvailableQty
+        .map(storeStock => {
+            return new StoreStockwrapper(storeStock.StoreAvailableQty[2].StoreId,storeStock.StoreAvailableQty[3].StoreName,storeStock.StoreAvailableQty[0].AvailableQuantity);
+        });
+        
+        return stockArray;
     } catch(err){
-        console.log(err)
+        console.log(err);
     }
     
 }
@@ -61,3 +66,5 @@ app.post('/:myFunction', async function(req, res){
 app.listen( port, function () {
     console.log( 'Express server listening on port ' + port );
 } );
+
+
