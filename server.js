@@ -3,9 +3,7 @@ var fs = require('fs');
 var fetch = require('node-fetch');
 var express = require('express');
 var bodyParser = require('body-parser')
-var soap = require('soap');
-const EasySoap = require('easysoap');
-var parse = require('xml-parser');
+const Wsdlrdr = require('wsdlrdr');
 var app = express();
 var GetListItemInventoryDetailByStore = require('./Utils').GetListItemInventoryDetailByStore
 app.use(bodyParser.text());
@@ -34,7 +32,6 @@ var server = https.createServer( options, app );
 // FETCH
 
 const callCegid = async (method, body) => {
-    console.log(GetListItemInventoryDetailByStore(body))
     var url = 'https://y2-poc.lvmh.com/Y2-POC/ItemInventoryWcfService.svc';
     var POST = { method: 'POST', headers: {
         'Content-Type': 'text/xml;charset=utf-8',
@@ -48,7 +45,7 @@ const callCegid = async (method, body) => {
     try{
         var result = await fetch(`${url}`,POST)
         result = await result.text()
-        return parse(result).root.children[0].children[0].children[0].children[0];
+        return Wsdlrdr.getXmlDataAsJson(result);
     } catch(err){
         console.log(err)
     }
