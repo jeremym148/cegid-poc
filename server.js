@@ -8,6 +8,7 @@ const EasySoap = require('easysoap');
 var parse = require('xml-parser');
 var app = express();
 app.use(bodyParser.text());
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
 // https.globalAgent.options.ca = rootCas;
@@ -31,14 +32,14 @@ var server = https.createServer( options, app );
 
 // FETCH
 
-const callCegig = (method,body) =>{
+const callCegid = async (method, body) => {
 
     var url = 'https://y2-poc.lvmh.com/Y2-POC/ItemInventoryWcfService.svc';
     var POST = { method: 'POST', headers: {
         'Content-Type': 'text/xml;charset=utf-8',
         'Accept': 'text/xml',
         'Cache-Control': 'no-cache',
-        'SOAPAction': 'http://www.cegid.fr/Retail/1.0/IItemInventoryWcfService/'+ method,
+        'SOAPAction': `http://www.cegid.fr/Retail/1.0/IItemInventoryWcfService/${method}`,
         'Authorization': 'Basic RkFTSElPTl9FRDIwMTVcQ0VHSUQ6Q0VHSUQuMjAxNA== ' 
         },
         body: `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.cegid.fr/Retail/1.0">
@@ -46,7 +47,7 @@ const callCegig = (method,body) =>{
         <soapenv:Body>
            <ns:GetAvailableCumulativeQtyAllStores>
               <ns:itemIdentifier>
-                 <ns:Reference>167793HSC.38NO</ns:Reference>
+                 <ns:Reference>${body.Reference}</ns:Reference>
               </ns:itemIdentifier>
               <!--Optional:-->
               <ns:clientContext>
@@ -57,22 +58,26 @@ const callCegig = (method,body) =>{
         </soapenv:Body>
      </soapenv:Envelope>` };
     
+    try{
+        var result = await fetch(`${url}`,POST)
+        result = await result.text()
+        return parse(result).root.children[0].children[0].children[0].children[0];
+    } catch(err){
+        console.log(err)
+    }
     
-    fetch(`${url}`,POST)
-    .then(res => res.text())
-    .then(body => {
-        return parse(body).root.children[0].children[0].children[0].children[0].content
-    });
 }
 
 
 //EASY SOAP
 
 
-app.post('/:method',function(req, res){
+app.post('/:myFunction', async function(req, res){
     var body = req.body;
-    res.set('Content-Type', 'text/plain');
-	res.send(callCegig(req.method, body));
+    console.log(body)
+    res.set('Content-Type', 'application/json');
+    var data = await callCegid(req.params.myFunction,body);
+    res.send(data);
 });
 
 
