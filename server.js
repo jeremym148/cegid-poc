@@ -7,6 +7,7 @@ var soap = require('soap');
 const EasySoap = require('easysoap');
 var parse = require('xml-parser');
 var app = express();
+var GetListItemInventoryDetailByStore = require('./Utils').GetListItemInventoryDetailByStore
 app.use(bodyParser.text());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
@@ -33,7 +34,7 @@ var server = https.createServer( options, app );
 // FETCH
 
 const callCegid = async (method, body) => {
-
+    console.log(GetListItemInventoryDetailByStore(body))
     var url = 'https://y2-poc.lvmh.com/Y2-POC/ItemInventoryWcfService.svc';
     var POST = { method: 'POST', headers: {
         'Content-Type': 'text/xml;charset=utf-8',
@@ -42,21 +43,7 @@ const callCegid = async (method, body) => {
         'SOAPAction': `http://www.cegid.fr/Retail/1.0/IItemInventoryWcfService/${method}`,
         'Authorization': 'Basic RkFTSElPTl9FRDIwMTVcQ0VHSUQ6Q0VHSUQuMjAxNA== ' 
         },
-        body: `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="http://www.cegid.fr/Retail/1.0">
-        <soapenv:Header/>
-        <soapenv:Body>
-           <ns:GetAvailableCumulativeQtyAllStores>
-              <ns:itemIdentifier>
-                 <ns:Reference>${body.Reference}</ns:Reference>
-              </ns:itemIdentifier>
-              <!--Optional:-->
-              <ns:clientContext>
-                 <!--Optional:-->
-                 <ns:DatabaseId>FASHION_ED2015</ns:DatabaseId>
-              </ns:clientContext>
-           </ns:GetAvailableCumulativeQtyAllStores>
-        </soapenv:Body>
-     </soapenv:Envelope>` };
+        body: GetListItemInventoryDetailByStore(body) };
     
     try{
         var result = await fetch(`${url}`,POST)
@@ -80,11 +67,6 @@ app.post('/:myFunction', async function(req, res){
     res.send(data);
 });
 
-
-
-app.get('/', function(req, res){
-  res.send('bhhhhh');
-});
 
 
 server.listen( port, function () {
