@@ -53,9 +53,6 @@ const callCegid = async (method, body) => {
 }
 
 
-//EASY SOAP
-
-
 app.post('/:myFunction', async function(req, res){
     var body = req.body;
     console.log(body)
