@@ -26,11 +26,6 @@ var options = {
 var port = process.env.PORT || 8080;
 var server = https.createServer( options, app );
 
-//SOAP
-
-
-// FETCH
-
 const callCegid = async (method, body) => {
     var url = 'https://y2-poc.lvmh.com/Y2-POC/ItemInventoryWcfService.svc';
     var POST = { method: 'POST', headers: {
