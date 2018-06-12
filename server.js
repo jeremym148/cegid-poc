@@ -4,6 +4,7 @@ var fetch = require('node-fetch');
 var express = require('express');
 var bodyParser = require('body-parser')
 const Wsdlrdr = require('wsdlrdr');
+const R = require('ramda');
 var app = express();
 var GetListItemInventoryDetailByStore = require('./Utils').GetListItemInventoryDetailByStore
 app.use(bodyParser.text());
@@ -34,22 +35,38 @@ const callCegid = async (method, body) => {
     try{
         var result = await fetch(`${url}`,POST)
         result = await result.text()
-        var stockArray = [];
+        var stockObj = {};
+        
         let resultObj = Wsdlrdr.getXmlDataAsJson(result);
-        stockArray = resultObj
+        let InventoryDetailsByStore = resultObj
         .GetListItemInventoryDetailByStoreResponse
         .GetListItemInventoryDetailByStoreResult
-        .InventoryDetailsByStore.AvailableQtyByItemByStore[1]
-        .StoresAvailableQty
-        .map(storeStock => {
-            return new StoreStockwrapper(storeStock.StoreAvailableQty[2].StoreId,storeStock.StoreAvailableQty[3].StoreName,storeStock.StoreAvailableQty[0].AvailableQuantity);
-        });
+        .InventoryDetailsByStore;
+
+        if (R.type(InventoryDetailsByStore) == "Object"){
+            stockObj = setItemObj(InventoryDetailsByStore.AvailableQtyByItemByStore,stockObj,body.references[0]);
+        } 
+        else if (R.type(InventoryDetailsByStore) == "Array"){
+            InventoryDetailsByStore.map((itemStocks, index) => {
+                stockObj = setItemObj(itemStocks.AvailableQtyByItemByStore, stockObj, body.references[index]);
+            })
+        }
+
         
-        return stockArray;
+        
+        return stockObj;
     } catch(err){
         console.log(err);
     }
     
+}
+
+var setItemObj = (AvailableQtyByItemByStore, stockObj, itemCode) =>{
+    var obj =  R.mergeAll(AvailableQtyByItemByStore)
+    var arr = obj.StoresAvailableQty.map(item =>{
+        return R.dissoc('AvailableSkusQty', R.mergeAll(item.StoreAvailableQty))
+    })
+    return R.assoc(itemCode, arr,stockObj);
 }
 
 
