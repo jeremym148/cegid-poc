@@ -51,9 +51,6 @@ const callCegid = async (method, body) => {
                 stockObj = setItemObj(itemStocks.AvailableQtyByItemByStore, stockObj, body.references[index]);
             })
         }
-
-        
-        
         return stockObj;
     } catch(err){
         console.log(err);
@@ -63,9 +60,15 @@ const callCegid = async (method, body) => {
 
 var setItemObj = (AvailableQtyByItemByStore, stockObj, itemCode) =>{
     var obj =  R.mergeAll(AvailableQtyByItemByStore)
-    var arr = obj.StoresAvailableQty.map(item =>{
-        return R.dissoc('AvailableSkusQty', R.mergeAll(item.StoreAvailableQty))
-    })
+    var arr = [];
+    if (R.type(obj.StoresAvailableQty) == "Object"){
+        arr = [R.dissoc('AvailableSkusQty', R.mergeAll(obj.StoresAvailableQty.StoreAvailableQty))];
+    }
+    else if (R.type(obj.StoresAvailableQty) == "Array"){
+        arr = obj.StoresAvailableQty.map(item =>{
+            return R.dissoc('AvailableSkusQty', R.mergeAll(item.StoreAvailableQty));
+        })
+    }
     return R.assoc(itemCode, arr,stockObj);
 }
 
