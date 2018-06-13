@@ -33,7 +33,9 @@ const callCegid = async (method, bodyReq) => {
         var result = await fetch(`${url}`,POST)
 
         if(result.ok != true){
-            var err = new Error(`${result.status} ${result.statusText}`);
+            result = await result.text()
+            let resultObj = Wsdlrdr.getXmlDataAsJson(result);
+            var err = new Error(`${resultObj.Fault[1].faultstring}`);
             throw err;
         }
         result = await result.text()
@@ -69,9 +71,8 @@ app.post('/:myFunction', async function(req, res){
         var data = await callCegid(req.params.myFunction,body);
         res.send(data);
     } catch(err){
-        console.log(err)
-        res.statusMessage = err.message;
-        res.sendStatus(500);
+        res.status(500).send({ error: err.message });
+        // res.sendStatus(500).send(err.message);
     }
     
 });
