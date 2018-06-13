@@ -21,6 +21,14 @@ class StoreStockwrapper{
     }
 }
 
+class ErrorWrapper{
+    constructor(ok, statusCode, statusMessage){
+        this.ok = ok;
+        this.statusCode = statusCode;
+        this.statusMessage = statusMessage;
+    }
+}
+
 const callCegid = async (method, body) => {
     var url = 'https://y2-poc.lvmh.com/Y2-POC/ItemInventoryWcfService.svc';
     var POST = { method: 'POST', headers: {
@@ -34,6 +42,11 @@ const callCegid = async (method, body) => {
     
     try{
         var result = await fetch(`${url}`,POST)
+
+        if(result.ok != true){
+            var err = new Error(`${result.status} ${result.statusText}`);
+            throw err;
+        }
         result = await result.text()
         var stockObj = {};
         
@@ -53,7 +66,7 @@ const callCegid = async (method, body) => {
         }
         return stockObj;
     } catch(err){
-        console.log(err);
+        throw err;
     }
     
 }
@@ -77,8 +90,14 @@ app.post('/:myFunction', async function(req, res){
     var body = req.body;
     console.log(body)
     res.set('Content-Type', 'application/json');
-    var data = await callCegid(req.params.myFunction,body);
-    res.send(data);
+    try{
+        var data = await callCegid(req.params.myFunction,body);
+        res.send(data);
+    } catch(err){
+        res.statusMessage = err.message;
+        res.sendStatus(500);
+    }
+    
 });
 
 
