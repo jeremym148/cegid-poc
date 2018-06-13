@@ -5,40 +5,29 @@ var express = require('express');
 var bodyParser = require('body-parser')
 const Wsdlrdr = require('wsdlrdr');
 const R = require('ramda');
+var BodyReqUtils = require('./BodyReqUtils');
+var BodyParseResUtils = require('./BodyParseResUtils');
+
 var app = express();
-var GetListItemInventoryDetailByStore = require('./Utils').GetListItemInventoryDetailByStore
 app.use(bodyParser.text());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
+
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 var port = process.env.PORT || 8080;
 
-class StoreStockwrapper{
-    constructor(storeId, storeName, stock){
-        this.storeId = storeId;
-        this.storeName = storeName;
-        this.stock = stock;
-    }
-}
 
-class ErrorWrapper{
-    constructor(ok, statusCode, statusMessage){
-        this.ok = ok;
-        this.statusCode = statusCode;
-        this.statusMessage = statusMessage;
-    }
-}
-
-const callCegid = async (method, body) => {
-    var url = 'https://y2-poc.lvmh.com/Y2-POC/ItemInventoryWcfService.svc';
+const callCegid = async (method, bodyReq) => {
+    var url = `${process.env.ENDPOINT}`;
     var POST = { method: 'POST', headers: {
         'Content-Type': 'text/xml;charset=utf-8',
         'Accept': 'text/xml',
         'Cache-Control': 'no-cache',
-        'SOAPAction': `http://www.cegid.fr/Retail/1.0/IItemInventoryWcfService/${method}`,
-        'Authorization': 'Basic RkFTSElPTl9FRDIwMTVcQ0VHSUQ6Q0VHSUQuMjAxNA== ' 
+        'SOAPAction': `${process.env.SOAP_ACTION}${method}`,
+        'Authorization': `Basic ${process.env.AUTH}`
         },
-        body: GetListItemInventoryDetailByStore(body) };
+        body: BodyReqUtils.GetBody(method, bodyReq) 
+    };
     
     try{
         var result = await fetch(`${url}`,POST)
@@ -48,24 +37,11 @@ const callCegid = async (method, body) => {
             throw err;
         }
         result = await result.text()
-        var stockObj = {};
-        
         let resultObj = Wsdlrdr.getXmlDataAsJson(result);
-        let InventoryDetailsByStore = resultObj
-        .GetListItemInventoryDetailByStoreResponse
-        .GetListItemInventoryDetailByStoreResult
-        .InventoryDetailsByStore;
+        return BodyParseResUtils.GetBodyParsedRes(method, resultObj, bodyReq);
 
-        if (R.type(InventoryDetailsByStore) == "Object"){
-            stockObj = setItemObj(InventoryDetailsByStore.AvailableQtyByItemByStore,stockObj,body.references[0]);
-        } 
-        else if (R.type(InventoryDetailsByStore) == "Array"){
-            InventoryDetailsByStore.map((itemStocks, index) => {
-                stockObj = setItemObj(itemStocks.AvailableQtyByItemByStore, stockObj, body.references[index]);
-            })
-        }
-        return stockObj;
     } catch(err){
+        console.log(err)
         throw err;
     }
     
@@ -88,12 +64,12 @@ var setItemObj = (AvailableQtyByItemByStore, stockObj, itemCode) =>{
 
 app.post('/:myFunction', async function(req, res){
     var body = req.body;
-    console.log(body)
     res.set('Content-Type', 'application/json');
     try{
         var data = await callCegid(req.params.myFunction,body);
         res.send(data);
     } catch(err){
+        console.log(err)
         res.statusMessage = err.message;
         res.sendStatus(500);
     }
