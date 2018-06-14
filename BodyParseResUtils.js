@@ -21,6 +21,8 @@ module.exports = {
     GetListItemInventoryDetailByStore : (bodyReq, resultObj) =>{
 
         var setItemObj = (AvailableQtyByItemByStore, stockObj, itemCode) =>{
+            // var isMatching = ( item, storeId )=> item.StoreId == storeId;
+
             var obj =  R.mergeAll(AvailableQtyByItemByStore)
             var arr = [];
             if (R.type(obj.StoresAvailableQty) == "Object"){
@@ -31,7 +33,10 @@ module.exports = {
                     return R.dissoc('AvailableSkusQty', R.mergeAll(item.StoreAvailableQty));
                 })
             }
-            return R.assoc(itemCode, arr,stockObj);
+            var arrStores = bodyReq.stores.map( storeId => {
+                return R.mergeDeepLeft(arr.filter(item => item.StoreId == storeId)[0], {StoreId: storeId, StoreName:storeId, AvailableQuantity: 0});
+            })
+            return R.assoc(itemCode, arrStores,stockObj);
         };
 
 
