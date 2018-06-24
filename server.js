@@ -17,13 +17,13 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 var port = process.env.PORT || 8080;
 
 
-const callCegid = async (method, bodyReq) => {
-    var url = `${process.env.ENDPOINT}`;
+const callCegid = async (service ,method, bodyReq) => {
+    var url = `${process.env.ENDPOINT}${service}.svc`;
     var POST = { method: 'POST', headers: {
         'Content-Type': 'text/xml;charset=utf-8',
         'Accept': 'text/xml',
         'Cache-Control': 'no-cache',
-        'SOAPAction': `${process.env.SOAP_ACTION}${method}`,
+        'SOAPAction': `${process.env.SOAP_ACTION}I${service}/${method}`,
         'Authorization': `Basic ${process.env.AUTH}`
         },
         body: BodyReqUtils.GetBody(method, bodyReq) 
@@ -40,7 +40,8 @@ const callCegid = async (method, bodyReq) => {
         }
         result = await result.text()
         let resultObj = Wsdlrdr.getXmlDataAsJson(result);
-        return BodyParseResUtils.GetBodyParsedRes(method, resultObj, bodyReq);
+        let returnObj = BodyParseResUtils.GetBodyParsedRes(method, resultObj, bodyReq);
+        return returnObj != null ? returnObj : resultObj;
 
     } catch(err){
         console.log(err)
@@ -49,26 +50,13 @@ const callCegid = async (method, bodyReq) => {
     
 }
 
-var setItemObj = (AvailableQtyByItemByStore, stockObj, itemCode) =>{
-    var obj =  R.mergeAll(AvailableQtyByItemByStore)
-    var arr = [];
-    if (R.type(obj.StoresAvailableQty) == "Object"){
-        arr = [R.dissoc('AvailableSkusQty', R.mergeAll(obj.StoresAvailableQty.StoreAvailableQty))];
-    }
-    else if (R.type(obj.StoresAvailableQty) == "Array"){
-        arr = obj.StoresAvailableQty.map(item =>{
-            return R.dissoc('AvailableSkusQty', R.mergeAll(item.StoreAvailableQty));
-        })
-    }
-    return R.assoc(itemCode, arr,stockObj);
-}
 
 
-app.post('/:myFunction', async function(req, res){
+app.post('/:myService/:myFunction', async function(req, res){
     var body = req.body;
     res.set('Content-Type', 'application/json');
     try{
-        var data = await callCegid(req.params.myFunction,body);
+        var data = await callCegid(req.params.myService, req.params.myFunction, body);
         res.send(data);
     } catch(err){
         res.status(500).send({ error: err.message });
