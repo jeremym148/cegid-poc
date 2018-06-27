@@ -135,14 +135,14 @@ module.exports = {
               <ns:Create>
                  <ns:createRequest>
                     <ns:Header>
-                       <ns:CustomerId>FR0010007700</ns:CustomerId>
+                       <ns:CustomerId>${body.clientId}</ns:CustomerId>
                             <ns:Date>${moment().format('YYYY-MM-DD')}</ns:Date>
         
                        <ns:InternalReference>FFA_ARTICLE${moment().unix()}</ns:InternalReference>
                        <!--Optional:-->
                        <ns:SalesPersonId>A.BERLUTI</ns:SalesPersonId>
                        <!--Optional:-->
-                       <ns:StoreId>${body.store}</ns:StoreId>
+                       <ns:StoreId>FR001</ns:StoreId>
                        <!--Optional:-->
                        <ns:Type>ReceiptOnHold</ns:Type>
                     </ns:Header>
